@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Beleggingstracker – Marktdashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { slate: { 950: '#020617' } } } }
+    }
+  </script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    body { background-color: #020617; }
+    .fade-in { animation: fadeIn 0.25s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState } = React;
+
+    // ─── DATA (update maandelijks) ────────────────────────────────────────────
+    const DATA_DATE = "Mei 2026";
+
+    const techData = {
+      newsHighlight: {
+        title: "Microsoft & OpenAI heronderhandelen $100 mrd compute-deal",
+        body: "Microsoft en OpenAI hebben in mei 2026 hun exclusieve compute-deal herzien. Microsoft behoudt 49% equity maar geeft OpenAI de vrijheid om Azure-capaciteit aan te vullen met Oracle en CoreWeave-clusters. Dit signaleert een verschuiving: de infrastructuurlaag wordt een commodity, terwijl de enterprise data-integratielaag de nieuwe battleground is."
+      },
+      timeline: [
+        { year: "2022", label: "LLM Hype-piek", desc: "ChatGPT lanceert. Miljarden stromen naar AI-startups zonder verdienmodel.", color: "indigo" },
+        { year: "2023", label: "AI-Wrappers Explosie", desc: "Duizenden SaaS-wrappers rond GPT-4. Nauwelijks differentiatie, hoge churn.", color: "amber" },
+        { year: "2024", label: "Infrastructuur Shift", desc: "Nvidia H100 tekorten. Focus verschuift naar wie de picks en schoppen levert.", color: "indigo" },
+        { year: "2025", label: "Agentic AI Opkomst", desc: "Autonome AI-agents nemen repetitieve enterprise-workflows over. Data-connectiviteit cruciaal.", color: "emerald" },
+        { year: "2026", label: "Enterprise Data Layer Winst", desc: "Bedrijven die enterprise-data veilig aan AI koppelen domineren. Wrappers consolideren of sterven.", color: "emerald" },
+      ],
+      forecasts: [
+        { label: "AI-wrappers die failliet gaan", value: "~60%", sub: "Zonder proprietary data-moat (Gartner, 2026)" },
+        { label: "Enterprise AI-spend groei", value: "+34%", sub: "YoY in 2026 (IDC forecast)" },
+        { label: "Agentic AI marktgroei", value: "$47 mrd", sub: "Marktomvang 2028 (McKinsey)" },
+      ],
+      industryDetail: {
+        competitiveLandscape: [
+          { company: "ServiceNow", ticker: "NOW", position: "Dominant", moat: "Enterprise workflow lock-in", threat: "Salesforce AgentForce", outlook: "Positief" },
+          { company: "Salesforce", ticker: "CRM", position: "Uitdager", moat: "CRM data + AgentForce platform", threat: "ServiceNow + Microsoft", outlook: "Neutraal" },
+          { company: "Microsoft", ticker: "MSFT", position: "Platform", moat: "Azure + Copilot + Teams ecosystem", threat: "Open-source AI agents", outlook: "Positief" },
+          { company: "Palantir", ticker: "PLTR", position: "Specialist", moat: "Overheid + defensie AI-contracten", threat: "AWS GovCloud", outlook: "Positief" },
+          { company: "UiPath", ticker: "PATH", position: "Niche", moat: "RPA marktleider", threat: "Agentic AI vervangt RPA", outlook: "Negatief" },
+        ],
+        sectorNews: [
+          { date: "20 Mei 2026", headline: "Gartner: 65% van enterprise AI-budget gaat naar workflow-automatisering", impact: "positief", source: "Gartner" },
+          { date: "12 Mei 2026", headline: "Microsoft Copilot bereikt 100 mln enterprise gebruikers", impact: "positief", source: "Microsoft IR" },
+          { date: "28 Apr 2026", headline: "EU AI Act treedt volledig in werking – compliance-vereisten voor enterprise AI", impact: "neutraal", source: "Reuters" },
+          { date: "15 Apr 2026", headline: "OpenAI lanceert enterprise API met on-premise deployment optie", impact: "negatief", source: "Bloomberg" },
+          { date: "3 Mrt 2026", headline: "Nvidia Blackwell GPU shipments verdubbelen – infrastructuurkrapte neemt af", impact: "neutraal", source: "WSJ" },
+        ],
+        macroContext: "De Federal Reserve heeft de rente in mei 2026 ongewijzigd gehouden op 4,50%. Hogere rentes drukken traditioneel de waardering van groeiaandelen, maar enterprise tech-budgetten blijven opmerkelijk robuust: CIO-surveys tonen AI als de #1 investeringsprioriteit voor het tweede jaar op rij.\n\nDe sterke dollar (+8% YTD vs EUR) heeft een mixed effect: Amerikaanse tech-bedrijven zien internationale omzet in USD dalen, maar hun R&D-kostenvoordeel vs Europese concurrenten neemt toe. Voor de tech-sector blijft de macro-omgeving constructief zolang de arbeidsmarkt sterk blijft.",
+        longerForecasts: [
+          { label: "Enterprise AI software markt 2030", value: "$290 mrd", sub: "CAGR 38% (IDC 2026)" },
+          { label: "Agentic AI adoption in Fortune 500", value: "78%", sub: "Verwacht geïmplementeerd per 2028" },
+          { label: "IT-jobs geautomatiseerd door AI", value: "23%", sub: "Routinetaken, niet totale functies (WEF)" },
+          { label: "Cloud AI spend per enterprise", value: "$12 mln", sub: "Gemiddeld jaarlijks budget 2027 (Forrester)" },
+        ]
+      },
+      stocks: [
+        {
+          type: "KOPEN",
+          ticker: "NOW",
+          name: "ServiceNow",
+          price: "$1.087",
+          pe: "62x",
+          ytd: "+18%",
+          mcap: "$224 mrd",
+          thesis: "ServiceNow is de enterprise data-orkestratielaag voor Fortune 500 bedrijven. Hun Now Platform integreert veilig AI-agents in bestaande workflows zonder data het bedrijf te laten verlaten. Recurrente inkomsten, >99% renewal rate, en toenemend pricing power door AI Pro SKU.",
+          risk: "Hoge waardering – kwetsbaar bij rente-stijging.",
+          color: "emerald",
+          newsTimeline: [
+            { date: "22 Mei 2026", headline: "ServiceNow kondigt Now Assist for HR aan – 40% tijdsbesparing in pilotprogramma's", impact: "positief", source: "ServiceNow IR" },
+            { date: "8 Mei 2026", headline: "Q1 2026 earnings: omzet $3,09 mrd (+21% YoY), guidance verhoogd naar +22% voor FY2026", impact: "positief", source: "ServiceNow IR" },
+            { date: "24 Apr 2026", headline: "Strategisch partnerschap met SAP voor geïntegreerde AI-workflows in ERP-omgevingen", impact: "positief", source: "Bloomberg" },
+            { date: "14 Apr 2026", headline: "ServiceNow breidt Microsoft Copilot-integratie uit naar alle Enterprise-klanten", impact: "positief", source: "Reuters" },
+            { date: "2 Mrt 2026", headline: "Morgan Stanley downgrade naar Neutral wegens verwachte meervoudige compressie bij rentestijging", impact: "negatief", source: "Morgan Stanley" },
+            { date: "18 Feb 2026", headline: "ServiceNow bereikt $10 mrd ARR mijlpaal – snelste enterprise software bedrijf ooit", impact: "positief", source: "CNBC" },
+          ],
+          financials: {
+            revenue: "$3,09 mrd",
+            revenueGrowth: "+21%",
+            grossMargin: "79%",
+            operatingMargin: "24%",
+            netIncome: "$436 mln",
+            eps: "$2,13",
+            epsGrowth: "+26%",
+            fcf: "$1,1 mrd"
+          },
+          analystConsensus: { buy: 28, hold: 8, sell: 1, priceTarget: "$1.210", upside: "+11%" },
+          trendReport: "ServiceNow bevindt zich op het kruispunt van twee mega-trends: enterprise AI-adoptie en IT-modernisering. Het Now Platform fungeert als de 'system of action' voor Fortune 500-bedrijven, waarmee AI-agents veilig toegang krijgen tot bedrijfsdata zonder dat die data het netwerk verlaat. Dit is het fundamentele onderscheid met generieke AI-wrappers.\n\nDe AI Pro SKU, gelanceerd in Q3 2025, draagt inmiddels bij aan ~15% van nieuwe ARR-deals. Management guidance van +20% jaarlijkse omzetgroei tot 2028 lijkt conservatief gezien de accelererende enterprise AI-budgetten. De recente SAP-integratie opent de deur naar ERP-klanten die historisch buiten ServiceNow's bereik lagen.\n\nHet grootste risico blijft de waardering: bij 62x P/E is er weinig ruimte voor tegenvallers. Maar de kwaliteit van de recurring revenue base – met >99% renewal rates en stijgende Net Revenue Retention – rechtvaardigt een structurele premiumwaardering.",
+          opportunities: [
+            "AI Pro SKU verhoogt gemiddelde contract waarde per klant met 30-45%",
+            "SAP + ERP integraties openen $40+ mrd aan nieuw adresseerbaar markt",
+            "Now Assist for HR/Finance schaalt naar alle 8.100+ enterprise klanten",
+            "Internationale expansie: EMEA + APAC elk groeiend naar $1+ mrd run rate"
+          ]
+        },
+        {
+          type: "VOLGEN",
+          ticker: "GOOGL",
+          name: "Alphabet",
+          price: "$192",
+          pe: "21x",
+          ytd: "+12%",
+          mcap: "$2.380 mrd",
+          thesis: "Alphabet wordt nog steeds gedomineerd door Google Search advertising (~$237 mrd/jaar) en Google Cloud. De AI-investeringen (Gemini, TPUs, DeepMind) worden grotendeels gefinancierd door de advertentie-cashcow. Bij een P/E van 21x is dit abnormaal goedkoop voor dit kwaliteitsniveau.",
+          risk: "Antitrust-risico in EU en VS. Search-marktaandeel onder druk van AI-assistenten.",
+          color: "blue",
+          newsTimeline: [
+            { date: "20 Mei 2026", headline: "Google I/O 2026: Gemini 2.5 Ultra aangekondigd met native multimodale agentcapaciteiten", impact: "positief", source: "The Verge" },
+            { date: "6 Mei 2026", headline: "Q1 2026: Search-omzet +13% YoY ondanks AI-concurrentie, Cloud +28% YoY naar $13,1 mrd", impact: "positief", source: "Alphabet IR" },
+            { date: "22 Apr 2026", headline: "DOJ-rechtbank bevestigt Google's monopoliepositie in Search – remedies nog onbekend", impact: "negatief", source: "Reuters" },
+            { date: "10 Apr 2026", headline: "Waymo bereikt 1 miljoen betaalde ritten per week in San Francisco en Phoenix", impact: "positief", source: "Bloomberg" },
+            { date: "1 Mrt 2026", headline: "EU legt €2,4 mrd boete op wegens Shopping-algoritme discriminatie", impact: "negatief", source: "FT" },
+          ],
+          financials: {
+            revenue: "$96,5 mrd",
+            revenueGrowth: "+14%",
+            grossMargin: "57%",
+            operatingMargin: "32%",
+            netIncome: "$28,8 mrd",
+            eps: "$2,31",
+            epsGrowth: "+19%",
+            fcf: "$22,4 mrd"
+          },
+          analystConsensus: { buy: 45, hold: 12, sell: 2, priceTarget: "$225", upside: "+17%" },
+          trendReport: "Alphabet is misschien wel de meest misunderstood megacap in de markt. Terwijl analisten debatteren over AI-disruptie van Search, genereert het bedrijf kwartaal na kwartaal recordcashflows. De advertentie-engine is structureel sterker dan ooit: AI-verbeterde advertentieformaten verhogen adverteerders-ROI, waardoor budgetten naar Google blijven stromen.\n\nGoogle Cloud is de onderschatte groeifactor. Met $13+ mrd kwartaalomzet en 28% groei heeft Cloud de kritische schaal bereikt waar operationele leverage begint door te werken. Elke procent margeverbetering in Cloud voegt miljarden toe aan de operating income.\n\nBij 21x P/E betaal je een waardebedrijfswaardering voor een bedrijf dat nog in groeimodus opereert. DeepMind, Waymo, en de TPU-infrastructuur zijn opties die niet in de prijs zitten. Het primaire risico is een structurele DOJ-remedy die Google's standaard zoekmachine-status op iOS/Android bedreigt – dat zou een significante omzetschok zijn.",
+          opportunities: [
+            "Google Cloud AI-services bereiken kritische schaal voor margin expansion",
+            "Waymo commercialisering versnelt naar 10+ steden eind 2026",
+            "Gemini integratie in Workspace verhoogt ARPU van 3 mrd gebruikers",
+            "YouTube Shorts monetization bereikt pariteit met lange video's"
+          ]
+        }
+      ]
+    };
+
+    const pharmaData = {
+      newsHighlight: {
+        title: "Eli Lilly's Orforglipron: eerste orale GLP-1 agonist nadert FDA-goedkeuring",
+        body: "In mei 2026 publiceerde Eli Lilly positieve fase-3 data voor orforglipron, een dagelijkse pil die vergelijkbare gewichtsverliescijfers laat zien als injecteerbare GLP-1s. De mondiale pijplijn van GLP-1-therapieën wordt nu geschat op >$200 mrd marktomvang in 2030. De behoefte aan koude-keten supply chain verdwijnt, wat de addressable market verdrievoudigt."
+      },
+      timeline: [
+        { year: "2020", label: "Handmatige Drug Screening", desc: "Miljoenen verbindingen handmatig getest. 10-15 jaar R&D-cyclus, 90% faalpercentage.", color: "amber" },
+        { year: "2022", label: "AI-ondersteund Ontwerp", desc: "AlphaFold 2 revolutioneert eiwitstructuuranalyse. AI verkort screening van jaren naar weken.", color: "indigo" },
+        { year: "2024", label: "Actieve AI Drug Discovery", desc: "Isomorphic Labs (DeepMind) sluit deal met Eli Lilly voor AI-designed molecules.", color: "emerald" },
+        { year: "2025", label: "Precision Medicine Live", desc: "Realtime genomische profilering stuurt behandelkeuzes aan in oncologie. UnitedHealth schaalt admin-AI.", color: "emerald" },
+        { year: "2026", label: "Healthcare AI Mainstream", desc: "AI vermindert prior authorization-tijden met 70%+. GLP-1 orale formuleringen breken markt open.", color: "emerald" },
+      ],
+      forecasts: [
+        { label: "Healthcare AI marktomvang 2030", value: "$208 mrd", sub: "CAGR van 38% (Grand View Research)" },
+        { label: "Admin kostenreductie via AI", value: "-$360 mrd", sub: "Potentiële US healthcare admin besparing" },
+        { label: "GLP-1 markt 2030", value: "$200+ mrd", sub: "Incl. orale formuleringen (Goldman Sachs)" },
+      ],
+      industryDetail: {
+        competitiveLandscape: [
+          { company: "Eli Lilly", ticker: "LLY", position: "Leider GLP-1", moat: "Orale GLP-1 first-mover + AI discovery", threat: "Novo Nordisk CagriSema", outlook: "Positief" },
+          { company: "Novo Nordisk", ticker: "NVO", position: "Co-leider", moat: "Ozempic/Wegovy brand + supply chain", threat: "Orale alternatieven Lilly", outlook: "Neutraal" },
+          { company: "UnitedHealth", ticker: "UNH", position: "Verzekeraar #1", moat: "Optum AI + data van 50 mln patiënten", threat: "Regulatoire ingrepen", outlook: "Positief" },
+          { company: "Intuitive Surgical", ticker: "ISRG", position: "Robotics leider", moat: "Installed base 9.000+ da Vinci systemen", threat: "Medtronic Hugo, J&J Ottava", outlook: "Positief" },
+          { company: "Isomorphic Labs", ticker: "Privaat", position: "AI Discovery", moat: "AlphaFold IP + DeepMind rekenkracht", threat: "Insilico Medicine, Schrödinger", outlook: "Positief" },
+        ],
+        sectorNews: [
+          { date: "18 Mei 2026", headline: "FDA verleent Fast Track designation aan Lilly's orforglipron voor obesitas behandeling", impact: "positief", source: "FDA.gov" },
+          { date: "10 Mei 2026", headline: "CMS kondigt vergoeding aan voor GLP-1 medicijnen onder Medicare Part D per 2027", impact: "positief", source: "Reuters" },
+          { date: "2 Mei 2026", headline: "Novo Nordisk CagriSema fase-3: 22,7% gewichtsverlies – sterker dan verwacht", impact: "negatief", source: "NEJM" },
+          { date: "14 Apr 2026", headline: "UnitedHealth Optum AI vermindert prior auth verwerkingstijd van 3 dagen naar 4 uur", impact: "positief", source: "UNH IR" },
+          { date: "28 Mrt 2026", headline: "WHO: Globale obesitas-epidemie raakt 1,9 mrd volwassenen – GLP-1 markt structureel onderschat", impact: "positief", source: "WHO" },
+        ],
+        macroContext: "De healthcare sector profiteert van demografische rugwind: de wereldbevolking vergrijst en chronische ziekten nemen toe. Medicare en Medicaid-uitbreidingen in de VS bieden structurele vraagondersteuning, ondanks politieke druk op medicijnprijzen.\n\nHet macro-risico zit in drug pricing reform: de Inflation Reduction Act geeft CMS onderhandelingsmacht over 10-20 medicijnen per jaar. Voor GLP-1's specifiek is de kans op prijsdruk reëel na de Medicare Part D uitbreiding. Bedrijven met brede pijplijnen en lage productiekosten (Lilly's orale formuleringen) zijn het beste gepositioneerd.",
+        longerForecasts: [
+          { label: "GLP-1 markt 2030", value: "$200+ mrd", sub: "Incl. orale formuleringen (Goldman Sachs)" },
+          { label: "AI drug discovery tijdsbesparing", value: "60-70%", sub: "Verkorting R&D-cyclus vs traditioneel" },
+          { label: "Healthcare admin AI-besparing VS", value: "$360 mrd", sub: "Jaarlijks potentieel (McKinsey)" },
+          { label: "Robotische chirurgie markt 2028", value: "$22 mrd", sub: "CAGR 16% (Grand View Research)" },
+        ]
+      },
+      stocks: [
+        {
+          type: "KOPEN",
+          ticker: "UNH",
+          name: "UnitedHealth Group",
+          price: "$312",
+          pe: "17x",
+          ytd: "-22%",
+          mcap: "$287 mrd",
+          thesis: "Na de scherpe koersdaling door politieke druk op prior authorization-praktijken, implementeert UnitedHealth nu massaal AI (via Optum) voor administratieve verwerking. Elke procentpunt verbetering in medical loss ratio = ~$1,5 mrd aan winst.",
+          risk: "Regulatoire en politieke risico's rond verzekeringswinsten. CEO-wissel in 2024.",
+          color: "emerald",
+          newsTimeline: [
+            { date: "16 Mei 2026", headline: "Q1 2026: omzet $109,6 mrd (+8% YoY), Optum AI reduceert claimverwerkingskosten met 18%", impact: "positief", source: "UNH IR" },
+            { date: "30 Apr 2026", headline: "Senaat stemt voor onderzoek naar UnitedHealth's prior authorization-praktijken", impact: "negatief", source: "Politico" },
+            { date: "14 Apr 2026", headline: "Optum AI pilot: prior auth verwerkingstijd daalt van 3 dagen naar 4 uur bij 50 ziekenhuizen", impact: "positief", source: "UNH IR" },
+            { date: "8 Apr 2026", headline: "UnitedHealth verhoogt dividend met 15% naar $8,40 per aandeel jaarlijks", impact: "positief", source: "Reuters" },
+            { date: "20 Mrt 2026", headline: "DOJ start onderzoek naar mogelijke anticompetitieve praktijken in Medicare Advantage", impact: "negatief", source: "WSJ" },
+            { date: "5 Mrt 2026", headline: "Optum Health bereikt 4,2 mln patiënten in eigen klinieken – verdubbeling in 2 jaar", impact: "positief", source: "Bloomberg" },
+          ],
+          financials: {
+            revenue: "$109,6 mrd",
+            revenueGrowth: "+8%",
+            grossMargin: "24%",
+            operatingMargin: "8%",
+            netIncome: "$5,8 mrd",
+            eps: "$6,18",
+            epsGrowth: "-4%",
+            fcf: "$7,2 mrd"
+          },
+          analystConsensus: { buy: 22, hold: 6, sell: 2, priceTarget: "$415", upside: "+33%" },
+          trendReport: "UnitedHealth is een bedrijf in transitie – en de markt beprijst het alsof de transitie mislukt. De realiteit is genuanceerder: de kerncashflows blijven intact ($7+ mrd FCF per kwartaal), en de Optum-divisie groeit structureel naar een zelfstandig AI-gedreven gezondheidsbedrijf.\n\nHet Optum AI-platform verwerkt inmiddels meer dan 1 miljard klinische beslissingen per jaar. De prior authorization-doorlooptijd is gedaald van gemiddeld 3 werkdagen naar 4 uur bij deelnemende ziekenhuizen. Dit vertaalt zich direct in kostenbesparingen: elke procentpunt verbetering in de medical loss ratio genereert ~$1,5 mrd extra winst.\n\nHet koersdoel van analisten van $415 (mediaan) impliceert 33% opwaarts potentieel vanuit het huidige niveau. Op 17x forward P/E is dit de goedkoopste waardering voor UNH in meer dan een decennium. De politieke risico's zijn reëel maar grotendeels ingeprijsd.",
+          opportunities: [
+            "Optum AI schaalvoordelen verbeteren medical loss ratio met 2-3% structureel",
+            "Medicare Advantage marktaandeel groeit terwijl concurrenten zich terugtrekken",
+            "Optum Health klinieken: direct care model heeft 2x hogere marge dan verzekeringen",
+            "Dividendrendement van 2,7% biedt neerwaartse bescherming"
+          ]
+        },
+        {
+          type: "KOPEN",
+          ticker: "LLY",
+          name: "Eli Lilly",
+          price: "$798",
+          pe: "41x",
+          ytd: "+9%",
+          mcap: "$757 mrd",
+          thesis: "De GLP-1 franchise (Mounjaro + Zepbound) genereert >$25 mrd/jaar. Lilly investeert dit in supercomputing-partnerships met Isomorphic Labs voor AI-drug discovery. De orale GLP-1 (orforglipron) opent de markt voor miljarden patiënten zonder injectie-toegang.",
+          risk: "Hoge waardering, afhankelijkheid van GLP-1 categorie, generieke concurrentie na patentverloop.",
+          color: "emerald",
+          newsTimeline: [
+            { date: "21 Mei 2026", headline: "Fase-3 orforglipron: 15,6% gemiddeld gewichtsverlies na 72 weken – vergelijkbaar met injectables", impact: "positief", source: "NEJM" },
+            { date: "6 Mei 2026", headline: "Q1 2026: Mounjaro + Zepbound omzet $7,4 mrd (+78% YoY), totaalomzet $12,7 mrd", impact: "positief", source: "Lilly IR" },
+            { date: "25 Apr 2026", headline: "FDA Fast Track voor orforglipron – review versneld naar Q4 2026 mogelijk", impact: "positief", source: "FDA.gov" },
+            { date: "10 Apr 2026", headline: "Isomorphic Labs (DeepMind) identificeert 3 nieuwe kandidaat-moleculen voor type-2 diabetes", impact: "positief", source: "Nature" },
+            { date: "18 Mrt 2026", headline: "Patentchallenge van generieke fabrikant voor Mounjaro afgewezen door rechtbank", impact: "positief", source: "Reuters" },
+            { date: "2 Mrt 2026", headline: "Novo Nordisk CagriSema data: sterker dan verwacht – intensificeert concurrentie in GLP-1 markt", impact: "negatief", source: "Bloomberg" },
+          ],
+          financials: {
+            revenue: "$12,7 mrd",
+            revenueGrowth: "+45%",
+            grossMargin: "82%",
+            operatingMargin: "38%",
+            netIncome: "$4,1 mrd",
+            eps: "$4,58",
+            epsGrowth: "+71%",
+            fcf: "$3,8 mrd"
+          },
+          analystConsensus: { buy: 32, hold: 7, sell: 1, priceTarget: "$945", upside: "+18%" },
+          trendReport: "Eli Lilly is het farmaceutische bedrijf van de generatie. De GLP-1 franchise heeft niet alleen een nieuw medicijn gecreëerd – het heeft een nieuwe medische paradigm geïntroduceerd waarbij chronische ziekten (obesitas, diabetes, mogelijk Alzheimer) behandelbaar worden met hoge effectiviteit en brede toegankelijkheid.\n\nDe strategische positie is bijna uniek: Lilly heeft zowel het best-in-class injecteerbare product (Mounjaro/Zepbound) als de meest geavanceerde orale kandidaat (orforglipron). Als orforglipron FDA-goedkeuring krijgt in Q4 2026, elimineer je de koudeketen-barrière en verdrievoudigt de adresseerbare markt naar patiënten in opkomende markten en lage-inkomenssegmenten.\n\nDe AI-drug discovery samenwerking met Isomorphic Labs is de strategische optie voor de volgende decade. Lilly gebruikt de GLP-1 cashflows om een systematisch voordeel op te bouwen in de snelheid waarmee nieuwe moleculen van kandidaat naar klinische trial gaan.",
+          opportunities: [
+            "Orforglipron FDA-goedkeuring opent $150+ mrd nieuw marktpotentieel (oraal segment)",
+            "Alzheimer-pijplijn (donanemab) biedt multi-miljard upside buiten GLP-1",
+            "Manufacturing capaciteitsuitbreiding reduceert supply constraints die groei limiteren",
+            "Isomorphic Labs partnership versnelt time-to-market voor volgende generatie therapieën"
+          ]
+        },
+        {
+          type: "VOLGEN",
+          ticker: "ISRG",
+          name: "Intuitive Surgical",
+          price: "$594",
+          pe: "72x",
+          ytd: "+14%",
+          mcap: "$213 mrd",
+          thesis: "De da Vinci 5 robot integreert realtime force-feedback AI die chirurgen tijdens operaties begeleidt. Herhaalbaar inkomensmodel via consumables (per procedure). Installed base van >9.000 systemen wereldwijd.",
+          risk: "Extreme waardering. Concurrentie van Medtronic Hugo en Johnson & Johnson Ottava.",
+          color: "amber",
+          newsTimeline: [
+            { date: "23 Mei 2026", headline: "da Vinci 5 Force Feedback AI FDA cleared voor uitbreiding naar colorectale chirurgie", impact: "positief", source: "FDA.gov" },
+            { date: "7 Mei 2026", headline: "Q1 2026: procedures +17% YoY, omzet $2,25 mrd, da Vinci 5 installatietempo versnelt", impact: "positief", source: "ISRG IR" },
+            { date: "29 Apr 2026", headline: "Johnson & Johnson Ottava ontvangt CE-mark in Europa – eerste serieuze concurrent", impact: "negatief", source: "J&J IR" },
+            { date: "15 Apr 2026", headline: "Ion platform longbiopsie: detectie accuraatheid 94% vs 72% bij conventionele bronchoscopie", impact: "positief", source: "CHEST Journal" },
+            { date: "6 Mrt 2026", headline: "Intuitive en Stanford Medicine lanceren AI-chirurgisch trainingsplatform voor residenten", impact: "positief", source: "Stanford Medicine" },
+          ],
+          financials: {
+            revenue: "$2,25 mrd",
+            revenueGrowth: "+17%",
+            grossMargin: "69%",
+            operatingMargin: "31%",
+            netIncome: "$620 mln",
+            eps: "$1,73",
+            epsGrowth: "+22%",
+            fcf: "$890 mln"
+          },
+          analystConsensus: { buy: 18, hold: 14, sell: 3, priceTarget: "$640", upside: "+8%" },
+          trendReport: "Intuitive Surgical heeft een bijna perfecte competitive moat geconstrueerd: meer dan 9.000 da Vinci-systemen geïnstalleerd wereldwijd, elk genererende $1,8-2,2 mln per jaar aan consumables en service-inkomsten. Dit recurring revenue model maakt het bedrijf relatief immuun voor macro-tegenwind.\n\nDe da Vinci 5, gelanceerd in 2024, is de eerste klinisch significante upgrade in tien jaar. De force-feedback technologie – waarbij chirurgen tastfeedback ontvangen tijdens minimaal-invasieve ingrepen – heeft in studies aangetoond de precisie te verhogen en complicatiepercentages te verlagen. Dit versterkt de network effects: ziekenhuizen die overstappen naar da Vinci 5 zullen chirurgen trainen op het platform, wat uitleenstroom versterkt.\n\nHet risico is de waardering: 72x P/E prijst een nagenoeg perfecte groeitrajectorie in. De introductie van J&J Ottava en Medtronic Hugo is geen existentiële bedreiging (het duurt 5-10 jaar om marktaandeel weg te halen bij een installed base van deze omvang), maar het kan het multiple-niveau onder druk zetten.",
+          opportunities: [
+            "Ion platform longdiagnose: snelgroeiende categorie buiten de kern chirurgiemarkt",
+            "Emerging markets expansie: India en China hebben <2% robotische chirurgiepenetratie",
+            "da Vinci 5 upgrade cyclus: 40% van installed base is nog oudere generatie systemen",
+            "Soft tissue single-port chirurgie: FDA clearance verwacht H2 2026"
+          ]
+        }
+      ]
+    };
+
+    const consumerData = {
+      newsHighlight: {
+        title: "Nike's 'Win Now' herstructurering: terug naar wholesale na DTC-debacle",
+        body: "CEO Elliott Hill kondigde in Q1 2026 aan dat Nike afstapt van zijn overmatige DTC-focus en opnieuw investeert in wholesale-relaties met Foot Locker, Dick's Sporting Goods, en JD Sports. De app-strategie faalde door hoge klantenacquisitiekosten. Tegelijkertijd herpositioneert Nike via athlete storytelling op social media."
+      },
+      timeline: [
+        { year: "2019", label: "DTC-revolutie", desc: "Nike kondigt grootschalige wholesale-exit aan. Focus op eigen apps en Nike.com.", color: "indigo" },
+        { year: "2021", label: "Social Commerce Explosie", desc: "Instagram Shopping, TikTok Shop en YouTube Shoppable Ads veranderen hoe Gen Z koopt.", color: "indigo" },
+        { year: "2023", label: "DTC-illusie Barst", desc: "Hoge CAC, lagere margins dan wholesale, inventarisoverschotten bij Nike en anderen.", color: "amber" },
+        { year: "2024", label: "Cancel Culture Piek", desc: "Meerdere merken verliezen 20-40% van brand equity in dagen door viral controverses.", color: "red" },
+        { year: "2026", label: "Wholesale Renaissance", desc: "Premium merken keren terug naar wholesale + hyper-authentieke creator partnerships.", color: "emerald" },
+      ],
+      forecasts: [
+        { label: "Social commerce groei 2026", value: "+28%", sub: "vs. traditionele e-commerce +7% (Shopify)" },
+        { label: "Brand trust premium", value: "2-4x", sub: "Prijspremium bij hoge brand trust vs. generic" },
+        { label: "Gen Z brand switching snelheid", value: "3 dagen", sub: "Gemiddelde tijd van incident tot boycot" },
+      ],
+      brandingDanger: {
+        title: "Het Instagram-Risico: Hoe Brand Equity Verdampt in 72 Uur",
+        points: [
+          { label: "Cancel Culture Amplificatie", desc: "Een enkele controversiële post kan binnen 24u miljoenen views bereiken. Merken hebben geen tijd voor crisis-PR meer." },
+          { label: "AI-gegenereerde Neppromoties", desc: "Deepfake endorsements van bekende atleten of CEO's worden steeds realistischer. Zonder actieve monitoring kan een nep-campagne honderden miljoenen schade aanrichten." },
+          { label: "Brand Dilutie via Over-Promotie", desc: "Nike's fout: te veel kortingsacties via apps verminderde de perceived premium value bij kernklanten." },
+          { label: "Influencer Overexposure", desc: "Wanneer een product door te veel influencers tegelijk gepusht wordt, verliest het de 'discovery'-waarde die social commerce krachtig maakt." },
+        ]
+      },
+      industryDetail: {
+        competitiveLandscape: [
+          { company: "Nike", ticker: "NKE", position: "Leider (herstel)", moat: "Wereldsterkste sportmerk + athlete IP", threat: "Adidas momentum, On Running groei", outlook: "Neutraal" },
+          { company: "Adidas", ticker: "ADS", position: "Uitdager", moat: "Terugkeer Samba/Gazelle trend + Beyoncé deal", threat: "Nike wholesale-herstel", outlook: "Positief" },
+          { company: "On Running", ticker: "ONON", position: "Groeier", moat: "Premium tech running + Roger Federer brand", threat: "Schaalnadelen vs Nike/Adidas", outlook: "Positief" },
+          { company: "Lululemon", ticker: "LULU", position: "Premiumleider", moat: "Community-gedreven loyaliteit, hoge NPS", threat: "Imitatie door Nike/Adidas in Athleisure", outlook: "Neutraal" },
+          { company: "LVMH", ticker: "MC", position: "Luxe dominant", moat: "Pricing power, heritage, schaarste", threat: "Chinese consumentenverzwakking", outlook: "Neutraal" },
+        ],
+        sectorNews: [
+          { date: "19 Mei 2026", headline: "Adidas Terrace collectie: wereldwijd uitverkocht in 48u na Sabrina Carpenter collab", impact: "neutraal", source: "Business of Fashion" },
+          { date: "7 Mei 2026", headline: "TikTok Shop bereikt $50 mrd GMV in 2025 – social commerce mainstream in VS", impact: "positief", source: "Bloomberg" },
+          { date: "25 Apr 2026", headline: "On Running Q1 2026: omzet +32% YoY, Noord-Amerika marktaandeel loopschoenen stijgt naar 8%", impact: "neutraal", source: "On IR" },
+          { date: "10 Apr 2026", headline: "FTC waarschuwing: AI-gegenereerde influencer endorsements moeten als reclame worden gelabeld", impact: "neutraal", source: "FTC.gov" },
+          { date: "18 Mrt 2026", headline: "Foot Locker CEO: Nike wholesale-herstel zichtbaar, orderboek Q3 2026 sterk gevuld", impact: "positief", source: "Foot Locker IR" },
+        ],
+        macroContext: "De consumentensector staat onder druk van twee richtingen: hogere rentes knijpen discretionaire bestedingen, terwijl premiummerken paradoxaal genoeg veerkrachtiger zijn dan value-merken. De 'hourglass economy' zet door: luxe en value groeien, het midden krimpt.\n\nVoor sportmerken specifiek is de generatieshift cruciaal: Gen Z koopt via social commerce (TikTok Shop, Instagram Checkout) maar is gevoelig voor authenticiteit. Merken die over-promoten of AI-endorsements gebruiken zonder transparantie riskeren viral backlash.",
+        longerForecasts: [
+          { label: "Global sportswear markt 2028", value: "$455 mrd", sub: "CAGR 6,7% (Statista)" },
+          { label: "Social commerce aandeel retail 2027", value: "18%", sub: "vs 11% in 2025 (eMarketer)" },
+          { label: "Premium vs mass brand premium", value: "2,4x", sub: "Gemiddelde prijspremium voor top-10 brands" },
+          { label: "Nike koersdoel consensus", value: "$95-110", sub: "18-24 maanden, herstelscenario (consensus)" },
+        ]
+      },
+      stocks: [
+        {
+          type: "VOLGEN",
+          ticker: "NKE",
+          name: "Nike",
+          price: "$67",
+          pe: "24x",
+          ytd: "-8%",
+          mcap: "$102 mrd",
+          thesis: "Nike handelt op een 5-jaars dieptepunt. De herstructurering onder Elliott Hill is pijnlijk maar noodzakelijk. Herstel van wholesale-relaties + nieuwe athletenverhalen op social genereren positieve signalen. Op 24x P/E historisch goedkoop.",
+          risk: "Trage herstructurering. Adidas herwint marktaandeel agressief. China-markt zwak.",
+          color: "amber",
+          newsTimeline: [
+            { date: "22 Mei 2026", headline: "Elliott Hill presenteert 'Win Now' strategie op Investor Day – wholesale centraal, DTC ondersteunend", impact: "positief", source: "Nike IR" },
+            { date: "4 Mei 2026", headline: "Q3 FY2026: omzet $11,3 mrd (-6% YoY), gross margin stabiel op 44,5%, guidance verlaagd", impact: "negatief", source: "Nike IR" },
+            { date: "28 Apr 2026", headline: "Foot Locker bevestigt significant hogere Nike ordervolumes voor H2 2026", impact: "positief", source: "Foot Locker IR" },
+            { date: "17 Apr 2026", headline: "Nike lanceert nieuw Jordan x Travis Scott collab – uitverkocht in 8 minuten online", impact: "positief", source: "Hypebeast" },
+            { date: "5 Apr 2026", headline: "China-divisie omzet daalt -10% YoY – lokale merken (Anta, Li-Ning) winnen terrein", impact: "negatief", source: "Bloomberg" },
+            { date: "12 Mrt 2026", headline: "Nike kondigt 1.500 extra ontslagen aan als onderdeel van $2 mrd kostenbesparingsprogramma", impact: "neutraal", source: "WSJ" },
+          ],
+          financials: {
+            revenue: "$11,3 mrd",
+            revenueGrowth: "-6%",
+            grossMargin: "44%",
+            operatingMargin: "9%",
+            netIncome: "$730 mln",
+            eps: "$0,95",
+            epsGrowth: "-22%",
+            fcf: "$1,1 mrd"
+          },
+          analystConsensus: { buy: 14, hold: 22, sell: 8, priceTarget: "$86", upside: "+28%" },
+          trendReport: "Nike bevindt zich in het meest kritieke strategische keerpunt in 30 jaar. De overstap naar een DTC-model onder de vorige CEO John Donahoe leek tactisch logisch maar bleek strategisch desastreus: hogere klantenacquisitiekosten, verslechterde retailpartnerschappen en een verwatering van het merkimago door continue kortingsacties.\n\nElliott Hill, die terugkeerde als CEO na 32 jaar bij Nike zelf, begrijpt de kern van het merk: Nike verkoopt geen schoenen, het verkoopt atletische aspiratie. Die aspiratie wordt gebouwd door partnerschappen met de beste atleten ter wereld, door authenticiteit op social media, en door schaarste in productdrops – niet door app-pushnotificaties met 20% kortingen.\n\nDe herstructurering is pijnlijk maar de signalen zijn constructief: Foot Locker heeft de Nike-ordervolumes voor H2 2026 significant verhoogd, de Jordan Brand handhaaft zijn culturele relevantie via collaboraties, en de kostenbesparingen van $2 mrd verbeteren de operationele leverage bij herstel. Het koersdoel van $95-110 in 18-24 maanden vergt geduld, maar de intrinsieke waarde van het sterkste sportmerk ter wereld rechtvaardigt die positionering.",
+          opportunities: [
+            "Wholesale herstel: Foot Locker + Dick's orderboeken zijn sterk gevuld voor H2 2026",
+            "Jordan Brand culturele relevantie blijft intact – separaat te waarderen op $40+ mrd",
+            "Kostenbesparingsprogramma $2 mrd verbetert marges structureel bij omzetherstel",
+            "Running categorie herovering: nieuwe Pegasus en Vomero updates ontvangen positieve reviews"
+          ]
+        }
+      ]
+    };
+
+    // ─── UTILITY ─────────────────────────────────────────────────────────────
+
+    function getStockByTicker(ticker) {
+      return [...techData.stocks, ...pharmaData.stocks, ...consumerData.stocks]
+        .find(s => s.ticker === ticker);
+    }
+
+    // ─── COMPONENTS ──────────────────────────────────────────────────────────
+
+    function BackButton({ onClick }) {
+      return (
+        <button
+          onClick={onClick}
+          className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors duration-150 text-sm font-medium"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+          <span>Terug naar overzicht</span>
+        </button>
+      );
+    }
+
+    function Badge({ type }) {
+      const styles = {
+        KOPEN: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30",
+        VOLGEN: "bg-amber-500/20 text-amber-400 border border-amber-500/30",
+      };
+      return (
+        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${styles[type]}`}>{type}</span>
+      );
+    }
+
+    function SectionHeader({ title, subtitle }) {
+      return (
+        <div className="mb-4">
+          <h2 className="text-white font-semibold text-base">{title}</h2>
+          {subtitle && <p className="text-slate-400 text-sm mt-0.5">{subtitle}</p>}
+        </div>
+      );
+    }
+
+    function Divider() {
+      return <div className="border-t border-slate-700/50 my-6" />;
+    }
+
+    function ForecastCards({ items }) {
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {items.map((f, i) => (
+            <div key={i} className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4">
+              <div className="text-indigo-400 text-xl font-bold">{f.value}</div>
+              <div className="text-white text-sm font-medium mt-1">{f.label}</div>
+              <div className="text-slate-500 text-xs mt-0.5">{f.sub}</div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    function NewsCard({ news }) {
+      return (
+        <div className="bg-indigo-950/40 border border-indigo-500/30 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse" />
+            <span className="text-indigo-400 text-xs font-bold uppercase tracking-wide">Nieuws Highlight – {DATA_DATE}</span>
+          </div>
+          <h3 className="text-white font-semibold mb-2">{news.title}</h3>
+          <p className="text-slate-300 text-sm leading-relaxed">{news.body}</p>
+        </div>
+      );
+    }
+
+    function TimelineNode({ item, index, total }) {
+      const [open, setOpen] = useState(false);
+      const colorMap = {
+        indigo:  { dot: "bg-indigo-500",  text: "text-indigo-400",  badge: "bg-indigo-500/20 border-indigo-500/30" },
+        amber:   { dot: "bg-amber-400",   text: "text-amber-400",   badge: "bg-amber-500/20 border-amber-500/30" },
+        emerald: { dot: "bg-emerald-500", text: "text-emerald-400", badge: "bg-emerald-500/20 border-emerald-500/30" },
+        red:     { dot: "bg-red-500",     text: "text-red-400",     badge: "bg-red-500/20 border-red-500/30" },
+      };
+      const c = colorMap[item.color] || colorMap.indigo;
+      return (
+        <div className="relative pl-8" onClick={() => setOpen(!open)}>
+          {index < total - 1 && (
+            <div className="absolute left-3 top-6 bottom-0 w-0.5 bg-gradient-to-b from-slate-600 to-transparent" />
+          )}
+          <div className={`absolute left-0 top-1.5 w-6 h-6 rounded-full ${c.dot} flex items-center justify-center ring-4 ring-slate-900 cursor-pointer`}>
+            <div className="w-2 h-2 bg-white/80 rounded-full" />
+          </div>
+          <div className="pb-6 cursor-pointer">
+            <div className="flex items-center gap-2 mb-1">
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${c.badge} ${c.text}`}>{item.year}</span>
+              <span className="text-white font-medium text-sm">{item.label}</span>
+            </div>
+            {open ? (
+              <p className="text-slate-400 text-sm mt-1 fade-in">{item.desc}</p>
+            ) : (
+              <p className="text-slate-500 text-xs mt-0.5">Klik voor toelichting</p>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    function StockCard({ stock, onDrillDown }) {
+      const [open, setOpen] = useState(false);
+      const borderColor = stock.type === "KOPEN" ? "border-emerald-500/40" : "border-amber-500/40";
+      const hoverBorder = stock.type === "KOPEN" ? "hover:border-emerald-400/70" : "hover:border-amber-400/70";
+      return (
+        <div
+          className={`bg-slate-800/60 border ${borderColor} ${hoverBorder} rounded-xl p-5 cursor-pointer transition-all duration-200`}
+          onClick={() => setOpen(!open)}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xs ${stock.type === "KOPEN" ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400"}`}>
+                {stock.ticker}
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-white font-semibold">{stock.name}</span>
+                  <Badge type={stock.type} />
+                </div>
+                <div className="text-slate-400 text-sm">{stock.ticker}</div>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <div className="text-white font-semibold">{stock.price}</div>
+              <div className={`text-xs font-medium ${stock.ytd.startsWith('+') ? 'text-emerald-400' : 'text-red-400'}`}>YTD {stock.ytd}</div>
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {[{ label: "P/E", value: stock.pe }, { label: "Mkt Cap", value: stock.mcap }, { label: "YTD", value: stock.ytd }].map(m => (
+              <div key={m.label} className="bg-slate-900/50 rounded-lg p-2 text-center">
+                <div className="text-slate-400 text-xs">{m.label}</div>
+                <div className={`text-sm font-semibold ${m.label === "YTD" ? (m.value.startsWith('+') ? 'text-emerald-400' : 'text-red-400') : 'text-white'}`}>{m.value}</div>
+              </div>
+            ))}
+          </div>
+          {open && (
+            <div className="mt-4 fade-in space-y-3">
+              <div>
+                <div className="text-slate-400 text-xs uppercase tracking-wide mb-1">Investment Thesis</div>
+                <p className="text-slate-300 text-sm leading-relaxed">{stock.thesis}</p>
+              </div>
+              <div className="bg-red-950/40 border border-red-800/30 rounded-lg p-3">
+                <div className="text-red-400 text-xs uppercase tracking-wide mb-1 font-semibold">Risico</div>
+                <p className="text-red-300 text-sm">{stock.risk}</p>
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); onDrillDown(stock.ticker); }}
+                className="w-full flex items-center justify-center gap-2 text-indigo-400 hover:text-indigo-300 text-xs font-medium py-2 border border-indigo-500/20 rounded-lg hover:border-indigo-500/40 transition-all"
+              >
+                Bekijk volledig rapport
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+            </div>
+          )}
+          <div className="mt-3 text-xs text-slate-500">
+            {open ? "▲ Verberg details" : "▼ Toon thesis & risico"}
+          </div>
+        </div>
+      );
+    }
+
+    // ─── DETAIL COMPONENTS ───────────────────────────────────────────────────
+
+    function NewsTimeline({ items }) {
+      const cfg = {
+        positief: { dot: "bg-emerald-500", badge: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" },
+        negatief: { dot: "bg-red-500",     badge: "bg-red-500/10 border-red-500/20 text-red-400" },
+        neutraal: { dot: "bg-slate-500",   badge: "bg-slate-500/10 border-slate-500/20 text-slate-400" },
+      };
+      return (
+        <div>
+          {items.map((item, i) => {
+            const c = cfg[item.impact] || cfg.neutraal;
+            return (
+              <div key={i} className="relative pl-6 pb-5">
+                {i < items.length - 1 && (
+                  <div className="absolute left-2 top-4 bottom-0 w-0.5 bg-slate-700" />
+                )}
+                <div className={`absolute left-0 top-1.5 w-4 h-4 rounded-full ${c.dot} ring-2 ring-slate-900`} />
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-white text-sm font-medium leading-snug">{item.headline}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-slate-500 text-xs">{item.date}</span>
+                      <span className="text-slate-700 text-xs">·</span>
+                      <span className="text-slate-500 text-xs">{item.source}</span>
+                    </div>
+                  </div>
+                  <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full border ${c.badge}`}>{item.impact}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    function FinancialBreakdown({ financials }) {
+      const metrics = [
+        { label: "Omzet (kwartaal)", value: financials.revenue },
+        { label: "Omzetgroei YoY",   value: financials.revenueGrowth },
+        { label: "Brutomarge",       value: financials.grossMargin },
+        { label: "Operationele marge", value: financials.operatingMargin },
+        { label: "Nettoresultaat",   value: financials.netIncome },
+        { label: "EPS",              value: financials.eps },
+        { label: "EPS Groei",        value: financials.epsGrowth },
+        { label: "Vrije Kasstroom",  value: financials.fcf },
+      ];
+      return (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {metrics.map(m => (
+            <div key={m.label} className="bg-slate-800/60 border border-slate-700/50 rounded-lg p-3">
+              <div className="text-slate-400 text-xs mb-1">{m.label}</div>
+              <div className={`text-sm font-bold ${
+                m.value && m.value.startsWith('+') ? 'text-emerald-400' :
+                m.value && m.value.startsWith('-') ? 'text-red-400' : 'text-white'
+              }`}>{m.value}</div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    function AnalystConsensus({ consensus, currentPrice }) {
+      const total = consensus.buy + consensus.hold + consensus.sell;
+      const buyPct  = Math.round((consensus.buy  / total) * 100);
+      const holdPct = Math.round((consensus.hold / total) * 100);
+      const sellPct = 100 - buyPct - holdPct;
+      return (
+        <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-5 space-y-4">
+          <div className="flex rounded-full overflow-hidden h-3">
+            <div className="bg-emerald-500 transition-all" style={{width: `${buyPct}%`}} />
+            <div className="bg-amber-400 transition-all"   style={{width: `${holdPct}%`}} />
+            <div className="bg-red-500 transition-all"     style={{width: `${sellPct}%`}} />
+          </div>
+          <div className="flex justify-between text-xs text-slate-400">
+            <span><span className="text-emerald-400 font-bold">{consensus.buy}</span> Buy ({buyPct}%)</span>
+            <span><span className="text-amber-400 font-bold">{consensus.hold}</span> Hold ({holdPct}%)</span>
+            <span><span className="text-red-400 font-bold">{consensus.sell}</span> Sell ({sellPct}%)</span>
+          </div>
+          <div className="grid grid-cols-3 gap-3 pt-2 border-t border-slate-700/50">
+            {[
+              { label: "Huidig", value: currentPrice },
+              { label: "Koersdoel", value: consensus.priceTarget },
+              { label: "Upside", value: consensus.upside },
+            ].map(m => (
+              <div key={m.label} className="text-center">
+                <div className="text-slate-400 text-xs">{m.label}</div>
+                <div className={`font-semibold text-sm mt-0.5 ${
+                  m.label === "Upside"
+                    ? (m.value.startsWith('+') ? 'text-emerald-400' : 'text-red-400')
+                    : 'text-white'
+                }`}>{m.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function TrendReport({ text }) {
+      const paragraphs = text.split('\n\n');
+      return (
+        <div className="bg-slate-800/40 border border-slate-700/40 rounded-xl p-5 space-y-3">
+          {paragraphs.map((p, i) => (
+            <p key={i} className="text-slate-300 text-sm leading-relaxed">{p}</p>
+          ))}
+        </div>
+      );
+    }
+
+    function RiskOpportunityCards({ risk, opportunities }) {
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-red-950/40 border border-red-800/30 rounded-xl p-4">
+            <div className="text-red-400 text-xs font-bold uppercase tracking-wide mb-2">Risico</div>
+            <p className="text-red-300 text-sm leading-relaxed">{risk}</p>
+          </div>
+          <div className="bg-emerald-950/30 border border-emerald-800/30 rounded-xl p-4">
+            <div className="text-emerald-400 text-xs font-bold uppercase tracking-wide mb-2">Kansen</div>
+            <ul className="space-y-1.5">
+              {opportunities.map((o, i) => (
+                <li key={i} className="flex gap-2 text-sm text-emerald-300">
+                  <span className="text-emerald-500 shrink-0">›</span>
+                  <span>{o}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      );
+    }
+
+    function CompanyHeader({ stock }) {
+      return (
+        <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-5">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div className="flex items-center gap-3">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-xs ${stock.type === 'KOPEN' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                {stock.ticker}
+              </div>
+              <div>
+                <h2 className="text-white text-xl font-bold">{stock.name}</h2>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-slate-400 text-sm">{stock.ticker}</span>
+                  <Badge type={stock.type} />
+                </div>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <div className="text-white text-2xl font-bold">{stock.price}</div>
+              <div className={`text-sm font-medium ${stock.ytd.startsWith('+') ? 'text-emerald-400' : 'text-red-400'}`}>YTD {stock.ytd}</div>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[{ label: "Market Cap", value: stock.mcap }, { label: "P/E Ratio", value: stock.pe }, { label: "YTD Return", value: stock.ytd }].map(m => (
+              <div key={m.label} className="bg-slate-900/60 rounded-lg p-3 text-center">
+                <div className="text-slate-400 text-xs">{m.label}</div>
+                <div className={`text-sm font-semibold mt-0.5 ${m.label === "YTD Return" ? (m.value.startsWith('+') ? 'text-emerald-400' : 'text-red-400') : 'text-white'}`}>{m.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function CompanyDetailView({ ticker }) {
+      const stock = getStockByTicker(ticker);
+      if (!stock) return null;
+      return (
+        <div className="space-y-6 fade-in">
+          <CompanyHeader stock={stock} />
+          <div>
+            <SectionHeader title="Nieuws Afgelopen 3 Maanden" subtitle="Chronologisch, meest recent eerst" />
+            <NewsTimeline items={stock.newsTimeline} />
+          </div>
+          <Divider />
+          <div>
+            <SectionHeader title="Financiële Kerncijfers" subtitle="Meest recente kwartaal / TTM" />
+            <FinancialBreakdown financials={stock.financials} />
+          </div>
+          <Divider />
+          <div>
+            <SectionHeader title="Analistenconsensus" subtitle="Buy / Hold / Sell verdeling + koersdoel" />
+            <AnalystConsensus consensus={stock.analystConsensus} currentPrice={stock.price} />
+          </div>
+          <Divider />
+          <div>
+            <SectionHeader title="Trend Rapport" subtitle="Bedrijfsstrategie & marktdynamiek" />
+            <TrendReport text={stock.trendReport} />
+          </div>
+          <Divider />
+          <RiskOpportunityCards risk={stock.risk} opportunities={stock.opportunities} />
+        </div>
+      );
+    }
+
+    function CompetitiveLandscapeTable({ rows }) {
+      return (
+        <div className="overflow-x-auto rounded-xl border border-slate-700/50">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-slate-800/80 text-slate-400 text-xs uppercase tracking-wide">
+                <th className="px-4 py-3 text-left">Bedrijf</th>
+                <th className="px-4 py-3 text-left">Positie</th>
+                <th className="px-4 py-3 text-left hidden md:table-cell">Moat</th>
+                <th className="px-4 py-3 text-left hidden md:table-cell">Bedreiging</th>
+                <th className="px-4 py-3 text-left">Outlook</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-700/30">
+              {rows.map((row, i) => (
+                <tr key={i} className="bg-slate-900/40 hover:bg-slate-800/40 transition-colors">
+                  <td className="px-4 py-3">
+                    <span className="font-medium text-white">{row.company}</span>
+                    <span className="text-slate-500 text-xs ml-1">{row.ticker}</span>
+                  </td>
+                  <td className="px-4 py-3 text-slate-300 text-xs">{row.position}</td>
+                  <td className="px-4 py-3 text-slate-400 text-xs hidden md:table-cell">{row.moat}</td>
+                  <td className="px-4 py-3 text-slate-400 text-xs hidden md:table-cell">{row.threat}</td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                      row.outlook === 'Positief' ? 'bg-emerald-500/20 text-emerald-400' :
+                      row.outlook === 'Negatief' ? 'bg-red-500/20 text-red-400' :
+                      'bg-amber-500/20 text-amber-400'
+                    }`}>{row.outlook}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    function IndustryDetailView({ tab }) {
+      const dataMap = { tech: techData, pharma: pharmaData, consumer: consumerData };
+      const data = dataMap[tab];
+      const detail = data.industryDetail;
+      const tabLabels = { tech: "Tech & AI Infrastructure", pharma: "Pharma & Healthcare", consumer: "Consumer & Branding" };
+      return (
+        <div className="space-y-6 fade-in">
+          <div className="bg-slate-800/40 border border-slate-700/40 rounded-xl p-4 flex items-center gap-3">
+            <div className="w-2 h-2 bg-indigo-400 rounded-full" />
+            <span className="text-indigo-400 text-xs font-bold uppercase tracking-wide">Sectorrapport – {tabLabels[tab]} – {DATA_DATE}</span>
+          </div>
+          <div>
+            <SectionHeader title="Competitief Landschap" subtitle="Head-to-head marktpositie vergelijking" />
+            <CompetitiveLandscapeTable rows={detail.competitiveLandscape} />
+          </div>
+          <Divider />
+          <div>
+            <SectionHeader title="Sectornieuws – Afgelopen 3 Maanden" subtitle="Chronologisch, meest recent eerst" />
+            <NewsTimeline items={detail.sectorNews} />
+          </div>
+          <Divider />
+          <div>
+            <SectionHeader title="Macro Context" subtitle="Renteontwikkeling & economische achtergrond" />
+            <TrendReport text={detail.macroContext} />
+          </div>
+          <Divider />
+          <div>
+            <SectionHeader title="Uitgebreide Prognoses" subtitle="Langetermijn marktdynamieken" />
+            <ForecastCards items={detail.longerForecasts} />
+          </div>
+        </div>
+      );
+    }
+
+    // ─── TAB CONTENT ─────────────────────────────────────────────────────────
+
+    function SectorReportButton({ onClick }) {
+      return (
+        <button
+          onClick={onClick}
+          className="flex items-center gap-2 text-indigo-400 hover:text-indigo-300 text-sm font-medium border border-indigo-500/30 hover:border-indigo-500/60 rounded-lg px-4 py-2 transition-all"
+        >
+          Volledig sectorrapport
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+      );
+    }
+
+    function TechTab({ onDrillDown, onSectorReport }) {
+      return (
+        <div className="space-y-6 fade-in">
+          <NewsCard news={techData.newsHighlight} />
+          <div>
+            <SectionHeader title="Timeline & Trends" subtitle="Van LLM-hype naar infrastructuur winstgevendheid" />
+            <div className="mt-2">
+              {techData.timeline.map((item, i) => (
+                <TimelineNode key={i} item={item} index={i} total={techData.timeline.length} />
+              ))}
+            </div>
+          </div>
+          <Divider />
+          <div>
+            <SectionHeader title="Prognoses 2026" subtitle="Marktdynamieken die de komende 12 maanden domineren" />
+            <ForecastCards items={techData.forecasts} />
+          </div>
+          <Divider />
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-white font-semibold text-base">Concrete Aandelen</h2>
+                <p className="text-slate-400 text-sm mt-0.5">Kopen & Volgen – klik voor thesis, dan "volledig rapport" voor diepteanalyse</p>
+              </div>
+              <SectorReportButton onClick={onSectorReport} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {techData.stocks.map((s, i) => <StockCard key={i} stock={s} onDrillDown={onDrillDown} />)}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function PharmaTab({ onDrillDown, onSectorReport }) {
+      return (
+        <div className="space-y-6 fade-in">
+          <NewsCard news={pharmaData.newsHighlight} />
+          <div>
+            <SectionHeader title="Timeline & Trends" subtitle="Van handmatige screening naar AI-gedreven drug discovery" />
+            <div className="mt-2">
+              {pharmaData.timeline.map((item, i) => (
+                <TimelineNode key={i} item={item} index={i} total={pharmaData.timeline.length} />
+              ))}
+            </div>
+          </div>
+          <Divider />
+          <div>
+            <SectionHeader title="Prognoses 2026" subtitle="Healthcare AI & GLP-1 marktdynamieken" />
+            <ForecastCards items={pharmaData.forecasts} />
+          </div>
+          <Divider />
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-white font-semibold text-base">Concrete Aandelen</h2>
+                <p className="text-slate-400 text-sm mt-0.5">Kopen & Volgen – klik voor thesis, dan "volledig rapport" voor diepteanalyse</p>
+              </div>
+              <SectorReportButton onClick={onSectorReport} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pharmaData.stocks.map((s, i) => <StockCard key={i} stock={s} onDrillDown={onDrillDown} />)}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function ConsumerTab({ onDrillDown, onSectorReport }) {
+      return (
+        <div className="space-y-6 fade-in">
+          <NewsCard news={consumerData.newsHighlight} />
+          <div>
+            <SectionHeader title="Timeline & Trends" subtitle="Van traditionele retail naar hyper-gepersonaliseerde social commerce" />
+            <div className="mt-2">
+              {consumerData.timeline.map((item, i) => (
+                <TimelineNode key={i} item={item} index={i} total={consumerData.timeline.length} />
+              ))}
+            </div>
+          </div>
+          <Divider />
+          <div>
+            <SectionHeader title="Prognoses 2026" subtitle="Social commerce vs. brand trust premium" />
+            <ForecastCards items={consumerData.forecasts} />
+          </div>
+          <Divider />
+          <div className="bg-red-950/50 border border-red-700/40 rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-5 h-5 rounded bg-red-500/30 flex items-center justify-center">
+                <span className="text-red-400 text-xs font-bold">!</span>
+              </div>
+              <span className="text-red-400 font-bold text-sm uppercase tracking-wide">Brand Equity Alert</span>
+            </div>
+            <h3 className="text-white font-semibold mb-3">{consumerData.brandingDanger.title}</h3>
+            <div className="space-y-3">
+              {consumerData.brandingDanger.points.map((p, i) => (
+                <div key={i} className="flex gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" />
+                  <div>
+                    <span className="text-red-300 font-medium text-sm">{p.label}: </span>
+                    <span className="text-slate-300 text-sm">{p.desc}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-white font-semibold text-base">Concrete Aandelen</h2>
+                <p className="text-slate-400 text-sm mt-0.5">Volgen – klik voor thesis, dan "volledig rapport" voor diepteanalyse</p>
+              </div>
+              <SectorReportButton onClick={onSectorReport} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {consumerData.stocks.map((s, i) => <StockCard key={i} stock={s} onDrillDown={onDrillDown} />)}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ─── MAIN APP ─────────────────────────────────────────────────────────────
+
+    const TABS = [
+      { id: "tech",     label: "Tech & AI Infrastructure", short: "Tech & AI" },
+      { id: "pharma",   label: "Pharma & Healthcare",      short: "Pharma" },
+      { id: "consumer", label: "Consumer & Branding",      short: "Consumer" },
+    ];
+
+    function App() {
+      const [active, setActive] = useState("tech");
+      const [currentView, setCurrentView] = useState({ type: 'sector' });
+
+      function navigateToCompany(ticker) {
+        setCurrentView({ type: 'company', ticker, fromTab: active });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      function navigateToIndustry(tab) {
+        setCurrentView({ type: 'industry', tab });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      function navigateBack() {
+        const returnTab = currentView.fromTab || currentView.tab || active;
+        setActive(returnTab);
+        setCurrentView({ type: 'sector' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      const inDetail = currentView.type !== 'sector';
+
+      return (
+        <div className="min-h-screen bg-slate-950 text-white font-sans">
+          <div className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-20">
+            <div className="max-w-5xl mx-auto px-4 py-4">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  {inDetail ? (
+                    <BackButton onClick={navigateBack} />
+                  ) : (
+                    <h1 className="text-xl font-bold text-white tracking-tight">
+                      Markt<span className="text-indigo-400">Dashboard</span>
+                    </h1>
+                  )}
+                  <p className="text-slate-400 text-xs mt-0.5">Sectoranalyse · {DATA_DATE} · Equity Research</p>
+                </div>
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-1.5 text-right">
+                  <div className="text-emerald-400 text-xs font-semibold">LIVE ANALYSE</div>
+                  <div className="text-slate-400 text-xs">{DATA_DATE}</div>
+                </div>
+              </div>
+              <div className={`flex gap-1 transition-opacity duration-200 ${inDetail ? 'opacity-30 pointer-events-none' : ''}`}>
+                {TABS.map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => { if (!inDetail) setActive(tab.id); }}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
+                      active === tab.id
+                        ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
+                        : "text-slate-400 hover:text-white hover:bg-slate-800"
+                    }`}
+                  >
+                    <span className="hidden sm:inline">{tab.label}</span>
+                    <span className="sm:hidden">{tab.short}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="max-w-5xl mx-auto px-4 py-8">
+            {currentView.type === 'sector' && active === 'tech'     && <TechTab     onDrillDown={navigateToCompany} onSectorReport={() => navigateToIndustry('tech')} />}
+            {currentView.type === 'sector' && active === 'pharma'   && <PharmaTab   onDrillDown={navigateToCompany} onSectorReport={() => navigateToIndustry('pharma')} />}
+            {currentView.type === 'sector' && active === 'consumer' && <ConsumerTab onDrillDown={navigateToCompany} onSectorReport={() => navigateToIndustry('consumer')} />}
+            {currentView.type === 'company'  && <CompanyDetailView  ticker={currentView.ticker} />}
+            {currentView.type === 'industry' && <IndustryDetailView tab={currentView.tab} />}
+          </div>
+
+          <div className="border-t border-slate-800 mt-12">
+            <div className="max-w-5xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+              <p className="text-slate-500 text-xs">Beleggingstracker · Gegenereerd {DATA_DATE} · Geen financieel advies</p>
+              <div className="flex gap-3">
+                <span className="text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">KOPEN = actief instappen</span>
+                <span className="text-xs bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">VOLGEN = monitoren</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
